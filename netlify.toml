@@ -1,0 +1,19 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "server"
+  node_bundler = "esbuild"
+
+# Proxy API requests to Netlify functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# React Router SPA fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,0 +1,31 @@
+{
+  "name": "handmade-store-server",
+  "version": "1.0.0",
+  "description": "Backend API for Handmade Store",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "setup-db": "node setup-db.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.18.2",
+    "nodemailer": "^6.9.8",
+    "sequelize": "^6.37.7",
+    "serverless-http": "^4.0.0",
+    "stripe": "^14.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
