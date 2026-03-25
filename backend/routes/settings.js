@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
         // If data exists
         if (settings && settings.length > 0) {
             settings.forEach(s => {
-                settingsMap[s.key] = s.value;
+                settingsMap[s.setting_key] = s.value;
             });
         }
 
