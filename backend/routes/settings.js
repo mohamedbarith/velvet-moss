@@ -11,24 +11,22 @@ router.get('/', async (req, res) => {
 
         let settingsMap = {};
 
-        // If data exists
         if (settings && settings.length > 0) {
             settings.forEach(s => {
-                settingsMap[s.setting_key] = s.value;
+                settingsMap[s.setting_key] = s.value; // ✅ FIXED
             });
         }
 
-        // Always return success
         res.json({
             success: true,
             settings: settingsMap
         });
 
     } catch (err) {
-        console.error("GET SETTINGS ERROR:", err); // 🔥 debug
+        console.error("GET SETTINGS ERROR:", err);
         res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: err.message // show real error
         });
     }
 });
@@ -47,27 +45,29 @@ router.put('/', async (req, res) => {
             });
         }
 
-        // Loop each key-value
         for (const [key, value] of Object.entries(settings)) {
 
-            const existing = await Setting.findOne({ where: { key } });
+            // ✅ FIXED HERE
+            const existing = await Setting.findOne({ 
+                where: { setting_key: key } 
+            });
 
             if (existing) {
                 await existing.update({ value: String(value) });
             } else {
+                // ✅ FIXED HERE
                 await Setting.create({
-                    key,
+                    setting_key: key,
                     value: String(value)
                 });
             }
         }
 
-        // Get updated data
         const newSettings = await Setting.findAll();
 
         let settingsMap = {};
         newSettings.forEach(s => {
-            settingsMap[s.key] = s.value;
+            settingsMap[s.setting_key] = s.value; // ✅ FIXED
         });
 
         res.json({
@@ -76,10 +76,10 @@ router.put('/', async (req, res) => {
         });
 
     } catch (err) {
-        console.error("UPDATE SETTINGS ERROR:", err); // 🔥 debug
+        console.error("UPDATE SETTINGS ERROR:", err);
         res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: err.message
         });
     }
 });
