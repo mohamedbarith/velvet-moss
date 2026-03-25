@@ -54,27 +54,20 @@ app.use((err, req, res, next) => {
 // ─── Connect to MySQL and Start Server ─────────────────────
 const PORT = process.env.PORT || 5000;
 
-if (require.main === module || process.env.NODE_ENV !== 'production') {
-    // Only run this when executed directly or in dev (not inside serverless import)
-    // Actually, to make it work locally inside dev, we check require.main
-    // But Netlify might require it. Better just check an env var:
-    if (!process.env.NETLIFY) {
-        sequelize.authenticate()
-            .then(() => {
-                console.log('✅ MySQL connected successfully');
-                return sequelize.sync({ alter: true });
-            })
-            .then(() => {
-                console.log('✅ Database tables synced');
-                app.listen(PORT, () => {
-                    console.log(`🚀 Server running on http://localhost:${PORT}`);
-                });
-            })
-            .catch((err) => {
-                console.error('❌ MySQL connection error:', err.message);
-                process.exit(1);
-            });
-    }
-}
+sequelize.authenticate()
+  .then(() => {
+    console.log('✅ MySQL connected successfully');
+    return sequelize.sync();
+  })
+  .then(() => {
+    console.log('✅ Database tables synced');
+    app.listen(process.env.PORT || 5000, () => {
+      console.log(`🚀 Server running`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ MySQL connection error:', err.message);
+    process.exit(1);
+  });
 
 module.exports = app;

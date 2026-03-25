@@ -8,7 +8,6 @@ import API, { getImageUrl } from '../lib/api';
 import '../styles/pages.css';
 
 // Removed legacy Stripe and mock UPI forms. Razorpay handles both intrinsically.
-
 function RazorpayForm({ orderId, totalAmount, onSuccess }) {
     const handlePayment = (e) => {
         e.preventDefault();
