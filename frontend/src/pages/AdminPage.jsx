@@ -60,22 +60,37 @@ function ProductModal({ product, onClose, onSave, categories }) {
         e.preventDefault();
         setLoading(true);
         try {
-            const fd = new FormData();
-            Object.keys(form).forEach((k) => fd.append(k, form[k]));
-            images.forEach((img) => fd.append('images', img));
+            let finalImages = [];
+
+            if (images.length > 0) {
+                for (const img of images) {
+                    const uploadFd = new FormData();
+                    uploadFd.append('image', img);
+                    const uploadRes = await API.post('/upload', uploadFd);
+                    finalImages.push(uploadRes.data.imageUrl);
+                }
+            } else if (product?.images) {
+                finalImages = product.images;
+            }
+
+            const payload = {
+                ...form,
+                images: finalImages
+            };
 
             let data;
             if (product) {
-                const res = await API.put(`/products/${product.id}`, fd);
+                const res = await API.put(`/products/${product.id}`, payload);
                 data = res.data;
             } else {
-                const res = await API.post('/products', fd);
+                const res = await API.post('/products', payload);
                 data = res.data;
             }
             toast.success(data.message);
             onSave();
             onClose();
         } catch (err) {
+            console.error('Save error:', err);
             toast.error(err.response?.data?.message || 'Failed to save product');
         } finally {
             setLoading(false);
