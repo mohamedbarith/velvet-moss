@@ -37,6 +37,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/contact', require('./routes/contact'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/upload', require('./routes/upload'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -54,7 +55,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: err.message || 'Internal Server Error' });
 });
 
-app.use('/api/upload', require('./routes/upload'));
 
 // ─── Connect to MySQL and Start Server ─────────────────────
 const PORT = process.env.PORT || 5000;
