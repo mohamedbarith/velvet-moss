@@ -6,7 +6,7 @@ const multer = require('multer');
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-router.post('/upload', upload.single('image'), (req, res) => {
+router.post('/', upload.single('image'), (req, res) => {
   try {
     const stream = cloudinary.uploader.upload_stream(
       { folder: "products" },
