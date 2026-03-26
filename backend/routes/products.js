@@ -111,7 +111,7 @@ router.get('/:id', async (req, res) => {
 // ==========================
 router.post('/', protect, adminOnly, async (req, res) => {
     try {
-        const {
+        let {
             name,
             description,
             price,
@@ -121,8 +121,15 @@ router.post('/', protect, adminOnly, async (req, res) => {
             isFeatured,
             tags,
             imagePosition,
-            images // ✅ Cloudinary URLs
+            images
         } = req.body;
+
+        // ✅ FIX: Ensure images always array
+        if (typeof images === 'string') {
+            images = [images];
+        }
+
+        images = images?.filter(img => img && img.startsWith('http')) || [];
 
         const tagsArr = typeof tags === 'string'
             ? tags.split(',').map(t => t.trim()).filter(Boolean)
@@ -137,7 +144,7 @@ router.post('/', protect, adminOnly, async (req, res) => {
             stock: parseInt(stock) || 0,
             isFeatured: isFeatured === 'true' || isFeatured === true,
             tags: tagsArr,
-            images: images || [], // ✅ Save cloud URLs
+            images, // ✅ Cloudinary URLs only
             imagePosition: imagePosition || 'center'
         });
 
@@ -163,7 +170,7 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
 
-        const {
+        let {
             name,
             description,
             price,
@@ -173,8 +180,15 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
             isFeatured,
             tags,
             imagePosition,
-            images // ✅ Cloudinary URLs
+            images
         } = req.body;
+
+        // ✅ FIX: Ensure images array
+        if (typeof images === 'string') {
+            images = [images];
+        }
+
+        images = images?.filter(img => img && img.startsWith('http')) || product.images;
 
         const tagsArr = typeof tags === 'string'
             ? tags.split(',').map(t => t.trim()).filter(Boolean)
@@ -189,7 +203,7 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
             stock: stock !== undefined ? parseInt(stock) : product.stock,
             isFeatured: isFeatured !== undefined ? (isFeatured === 'true' || isFeatured === true) : product.isFeatured,
             tags: tagsArr,
-            images: images || product.images, // ✅ Use cloud images
+            images, // ✅ always valid URLs
             imagePosition: imagePosition || product.imagePosition
         });
 
