@@ -62,8 +62,30 @@ sequelize.authenticate()
     console.log('✅ MySQL connected successfully');
     return sequelize.sync();
   })
-  .then(() => {
+  .then(async () => {
     console.log('✅ Database tables synced');
+    
+    try {
+        const User = require('./models/User');
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@velvetmoss.com';
+        const existingAdmin = await User.findOne({ where: { role: 'admin' } });
+        
+        if (!existingAdmin) {
+            await User.create({
+                name: process.env.ADMIN_NAME || 'Admin User',
+                email: adminEmail,
+                password: process.env.ADMIN_PASSWORD || 'admin123',
+                role: 'admin',
+                isActive: true
+            });
+            console.log(`🌱 Default admin created: ${adminEmail} / admin123`);
+        } else {
+            console.log(`✅ Admin user verified: ${existingAdmin.email}`);
+        }
+    } catch (err) {
+        console.error('⚠️ Failed to seed admin user:', err.message);
+    }
+
     app.listen(process.env.PORT || 5000, () => {
       console.log(`🚀 Server running`);
     });
