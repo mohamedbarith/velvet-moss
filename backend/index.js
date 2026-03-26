@@ -40,19 +40,21 @@ app.use('/api/settings', require('./routes/settings'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', db: 'MySQL', time: new Date().toISOString() });
+  res.json({ status: 'OK', db: 'MySQL', time: new Date().toISOString() });
 });
 
 // 404 handler
 app.use((req, res) => {
-    res.status(404).json({ success: false, message: 'Route not found' });
+  res.status(404).json({ success: false, message: 'Route not found' });
 });
 
 // Error handler
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ success: false, message: err.message || 'Internal Server Error' });
+  console.error(err.stack);
+  res.status(500).json({ success: false, message: err.message || 'Internal Server Error' });
 });
+
+app.use('/api/upload', require('./routes/upload'));
 
 // ─── Connect to MySQL and Start Server ─────────────────────
 const PORT = process.env.PORT || 5000;
@@ -64,26 +66,26 @@ sequelize.authenticate()
   })
   .then(async () => {
     console.log('✅ Database tables synced');
-    
+
     try {
-        const User = require('./models/User');
-        const adminEmail = process.env.ADMIN_EMAIL || 'admin@velvetmoss.com';
-        const existingAdmin = await User.findOne({ where: { role: 'admin' } });
-        
-        if (!existingAdmin) {
-            await User.create({
-                name: process.env.ADMIN_NAME || 'Admin User',
-                email: adminEmail,
-                password: process.env.ADMIN_PASSWORD || 'admin123',
-                role: 'admin',
-                isActive: true
-            });
-            console.log(`🌱 Default admin created: ${adminEmail} / admin123`);
-        } else {
-            console.log(`✅ Admin user verified: ${existingAdmin.email}`);
-        }
+      const User = require('./models/User');
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@velvetmoss.com';
+      const existingAdmin = await User.findOne({ where: { role: 'admin' } });
+
+      if (!existingAdmin) {
+        await User.create({
+          name: process.env.ADMIN_NAME || 'Admin User',
+          email: adminEmail,
+          password: process.env.ADMIN_PASSWORD || 'admin123',
+          role: 'admin',
+          isActive: true
+        });
+        console.log(`🌱 Default admin created: ${adminEmail} / admin123`);
+      } else {
+        console.log(`✅ Admin user verified: ${existingAdmin.email}`);
+      }
     } catch (err) {
-        console.error('⚠️ Failed to seed admin user:', err.message);
+      console.error('⚠️ Failed to seed admin user:', err.message);
     }
 
     app.listen(process.env.PORT || 5000, () => {
