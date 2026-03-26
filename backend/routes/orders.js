@@ -39,14 +39,14 @@ router.post('/', protect, async (req, res) => {
         }
 
         let shippingCost = 99; // Default
-        const shippingSetting = await Setting.findOne({ where: { key: 'shipping' } });
+        const shippingSetting = await Setting.findOne({ where: { setting_key: 'shipping' } });
         if (shippingSetting) {
             const parsedShipping = parseFloat(shippingSetting.value);
             if (!isNaN(parsedShipping)) shippingCost = parsedShipping;
         }
 
         let gstPercentage = 18;
-        const gstSetting = await Setting.findOne({ where: { key: 'gst' } });
+        const gstSetting = await Setting.findOne({ where: { setting_key: 'gst' } });
         if (gstSetting) {
             const parsedGst = parseFloat(gstSetting.value);
             if (!isNaN(parsedGst)) gstPercentage = parsedGst;
