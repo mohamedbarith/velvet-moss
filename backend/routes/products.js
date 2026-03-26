@@ -1,17 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
-const path = require('path');
+
 const Product = require('../models/Product');
 const Review = require('../models/Review');
-const User = require('../models/User');
 const { protect, adminOnly } = require('../middleware/auth');
-const upload = require('../middleware/upload');
 
-// @GET /api/products
+// ==========================
+// GET ALL PRODUCTS
+// ==========================
 router.get('/', async (req, res) => {
     try {
         const { page = 1, limit = 12, category, search, sort = 'newest', featured, minPrice, maxPrice } = req.query;
+
         const pageNum = Math.max(1, parseInt(page));
         const limitNum = Math.min(50, parseInt(limit));
         const offset = (pageNum - 1) * limitNum;
@@ -47,18 +48,23 @@ router.get('/', async (req, res) => {
                 limit: limitNum,
             },
         });
+
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// @GET /api/products/categories
+// ==========================
+// GET CATEGORIES
+// ==========================
 router.get('/categories', async (req, res) => {
-    const categories = ['Art', 'Crafts', 'Jewelry', 'Gifts', 'Home Decor', 'Clothing', 'Accessories', 'Candles', 'Pottery', 'Textiles'];
+    const categories = ['Art', 'Crafts', 'Jewelry', 'Gifts', 'Home Decor', 'Clothing'];
     res.json({ success: true, categories });
 });
 
-// @GET /api/products/reviews/recent
+// ==========================
+// GET RECENT REVIEWS
+// ==========================
 router.get('/reviews/recent', async (req, res) => {
     try {
         const reviews = await Review.findAll({
@@ -66,60 +72,113 @@ router.get('/reviews/recent', async (req, res) => {
             order: [['createdAt', 'DESC']],
             limit: 6
         });
+
         res.json({ success: true, reviews });
+
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// @GET /api/products/:id
+// ==========================
+// GET SINGLE PRODUCT
+// ==========================
 router.get('/:id', async (req, res) => {
     try {
         const product = await Product.findByPk(req.params.id);
-        if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
 
-        // Fetch reviews with user names
-        const reviews = await Review.findAll({ where: { productId: product.id }, order: [['createdAt', 'DESC']] });
+        if (!product) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+
+        const reviews = await Review.findAll({
+            where: { productId: product.id },
+            order: [['createdAt', 'DESC']]
+        });
+
         const productData = product.toJSON();
         productData.reviews = reviews;
 
         res.json({ success: true, product: productData });
+
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// @POST /api/products — Admin: create product
-router.post('/', protect, adminOnly, upload.array('images', 5), async (req, res) => {
+// ==========================
+// CREATE PRODUCT (ADMIN)
+// ==========================
+router.post('/', protect, adminOnly, async (req, res) => {
     try {
-        const { name, description, price, originalPrice, category, stock, isFeatured, tags, imagePosition } = req.body;
-        const images = req.files?.map(f => `/uploads/products/${f.filename}`) || [];
-        const tagsArr = typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+        const {
+            name,
+            description,
+            price,
+            originalPrice,
+            category,
+            stock,
+            isFeatured,
+            tags,
+            imagePosition,
+            images // ✅ Cloudinary URLs
+        } = req.body;
+
+        const tagsArr = typeof tags === 'string'
+            ? tags.split(',').map(t => t.trim()).filter(Boolean)
+            : [];
 
         const product = await Product.create({
-            name, description, price, originalPrice: originalPrice || null,
-            category, stock: parseInt(stock) || 0,
+            name,
+            description,
+            price,
+            originalPrice: originalPrice || null,
+            category,
+            stock: parseInt(stock) || 0,
             isFeatured: isFeatured === 'true' || isFeatured === true,
-            tags: tagsArr, images,
+            tags: tagsArr,
+            images: images || [], // ✅ Save cloud URLs
             imagePosition: imagePosition || 'center'
         });
 
-        res.status(201).json({ success: true, message: 'Product created!', product });
+        res.status(201).json({
+            success: true,
+            message: 'Product created!',
+            product
+        });
+
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// @PUT /api/products/:id — Admin: update product
-router.put('/:id', protect, adminOnly, upload.array('images', 5), async (req, res) => {
+// ==========================
+// UPDATE PRODUCT (ADMIN)
+// ==========================
+router.put('/:id', protect, adminOnly, async (req, res) => {
     try {
         const product = await Product.findByPk(req.params.id);
-        if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
 
-        const { name, description, price, originalPrice, category, stock, isFeatured, tags, imagePosition } = req.body;
-        const newImages = req.files?.map(f => `/uploads/products/${f.filename}`) || [];
-        const images = newImages.length > 0 ? newImages : product.images;
-        const tagsArr = typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(Boolean) : (product.tags || []);
+        if (!product) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+
+        const {
+            name,
+            description,
+            price,
+            originalPrice,
+            category,
+            stock,
+            isFeatured,
+            tags,
+            imagePosition,
+            images // ✅ Cloudinary URLs
+        } = req.body;
+
+        const tagsArr = typeof tags === 'string'
+            ? tags.split(',').map(t => t.trim()).filter(Boolean)
+            : (product.tags || []);
 
         await product.update({
             name: name || product.name,
@@ -129,53 +188,85 @@ router.put('/:id', protect, adminOnly, upload.array('images', 5), async (req, re
             category: category || product.category,
             stock: stock !== undefined ? parseInt(stock) : product.stock,
             isFeatured: isFeatured !== undefined ? (isFeatured === 'true' || isFeatured === true) : product.isFeatured,
-            tags: tagsArr, images,
+            tags: tagsArr,
+            images: images || product.images, // ✅ Use cloud images
             imagePosition: imagePosition || product.imagePosition
         });
 
-        res.json({ success: true, message: 'Product updated!', product });
+        res.json({
+            success: true,
+            message: 'Product updated!',
+            product
+        });
+
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// @DELETE /api/products/:id — Admin: delete product
+// ==========================
+// DELETE PRODUCT
+// ==========================
 router.delete('/:id', protect, adminOnly, async (req, res) => {
     try {
         const product = await Product.findByPk(req.params.id);
-        if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+
+        if (!product) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+
         await product.destroy();
-        res.json({ success: true, message: 'Product deleted' });
+
+        res.json({
+            success: true,
+            message: 'Product deleted'
+        });
+
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// @POST /api/products/:id/reviews
+// ==========================
+// ADD REVIEW
+// ==========================
 router.post('/:id/reviews', protect, async (req, res) => {
     try {
         const product = await Product.findByPk(req.params.id);
-        if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
 
-        // Check if user already reviewed
-        const existing = await Review.findOne({ where: { productId: product.id, userId: req.user.id } });
-        if (existing) return res.status(400).json({ success: false, message: 'You already reviewed this product' });
+        if (!product) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
 
-        const { rating, comment } = req.body;
-        await Review.create({
-            rating: parseInt(rating), comment,
-            userId: req.user.id, productId: product.id,
-            name: req.user.name,
+        const existing = await Review.findOne({
+            where: { productId: product.id, userId: req.user.id }
         });
 
-        // Recalculate avgRating
-        const allReviews = await Review.findAll({ where: { productId: product.id } });
-        const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
-        await product.update({ avgRating: parseFloat(avgRating.toFixed(2)), numReviews: allReviews.length });
+        if (existing) {
+            return res.status(400).json({ success: false, message: 'Already reviewed' });
+        }
 
-        const updatedProduct = product.toJSON();
-        updatedProduct.reviews = allReviews;
-        res.status(201).json({ success: true, product: updatedProduct });
+        const { rating, comment } = req.body;
+
+        await Review.create({
+            rating: parseInt(rating),
+            comment,
+            userId: req.user.id,
+            productId: product.id,
+            name: req.user.name
+        });
+
+        const allReviews = await Review.findAll({ where: { productId: product.id } });
+
+        const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+
+        await product.update({
+            avgRating: parseFloat(avgRating.toFixed(2)),
+            numReviews: allReviews.length
+        });
+
+        res.json({ success: true });
+
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
