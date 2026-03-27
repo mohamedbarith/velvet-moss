@@ -7,9 +7,8 @@ import { MOCK_FEATURED } from '../data/mockProducts';
 import '../styles/home.css';
 
 const FEATURES = [
-    { icon: <Truck size={22} />, title: 'Free Shipping', desc: 'On orders above ₹999' },
+    { icon: <Truck size={22} />, title: 'Free Shipping', desc: 'On orders above ₹200' },
     { icon: <Shield size={22} />, title: 'Secure Payment', desc: 'Stripe encrypted checkout' },
-    { icon: <RotateCcw size={22} />, title: 'Easy Returns', desc: '30-day return policy' },
     { icon: <Headphones size={22} />, title: '24/7 Support', desc: 'We are always here' },
 ];
 
@@ -38,6 +37,7 @@ export default function HomePage() {
     const [featured, setFeatured] = useState([]);
     const [categories, setCategories] = useState(['Crafts', 'Gifts']);
     const [reviews, setReviews] = useState([]);
+    const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -50,6 +50,13 @@ export default function HomePage() {
         API.get('/settings').then(({ data }) => {
             if (data?.settings?.categories) {
                 setCategories(data.settings.categories.split(',').map(s => s.trim()).filter(Boolean));
+            }
+        }).catch(console.error);
+
+        // Fetch Stats
+        API.get('/settings/stats').then(({ data }) => {
+            if (data?.success && data.stats) {
+                setStats(data.stats);
             }
         }).catch(console.error);
 
@@ -104,9 +111,9 @@ export default function HomePage() {
                         </div>
                         <div className="hero-stats">
                             {[
-                                { value: '200+', label: 'Handmade Products' },
-                                { value: '850+', label: 'Crafted Gifts' },
-                                { value: '100+', label: 'Happy Customers' },
+                                { value: stats ? `${stats.products}+` : '200+', label: 'Handmade Products' },
+                                { value: stats ? `${stats.orders}+` : '850+', label: 'Crafted Gifts' },
+                                { value: stats ? `${stats.users}+` : '100+', label: 'Happy Customers' },
                             ].map((s) => (
                                 <div key={s.label}>
                                     <div className="hero-stat-value">{s.value}</div>

@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Setting = require('../models/Setting');
+const Product = require('../models/Product');
+const Order = require('../models/Order');
+const User = require('../models/User');
 
 // ==========================
 // GET ALL SETTINGS
@@ -81,6 +84,29 @@ router.put('/', async (req, res) => {
             success: false,
             message: err.message
         });
+    }
+});
+
+// ==========================
+// GET PUBLIC STATS
+// ==========================
+router.get('/stats', async (req, res) => {
+    try {
+        const totalProducts = await Product.count();
+        const totalOrders = await Order.count();
+        const totalUsers = await User.count({ where: { role: 'user' } });
+
+        res.json({
+            success: true,
+            stats: {
+                products: totalProducts,
+                orders: totalOrders,
+                users: totalUsers
+            }
+        });
+    } catch (err) {
+        console.error("GET STATS ERROR:", err);
+        res.status(500).json({ success: false, message: err.message });
     }
 });
 
