@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, CheckCircle2 } from 'lucide-react';
+import { Lock, CheckCircle2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useCartStore from '../stores/cartStore';
 import useAuthStore from '../stores/authStore';
@@ -137,6 +137,21 @@ export default function CheckoutPage() {
         }
     };
 
+    const handleRemoveAddress = async (id) => {
+        try {
+            const response = await API.delete(`/auth/addresses/${id}`);
+            if (response.data.success) {
+                updateUser(response.data.user);
+                toast.success('Address removed');
+                if (selectedAddressId === id) {
+                    setSelectedAddressId(null);
+                }
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to remove address');
+        }
+    };
+
     const handleCreateOrder = async () => {
         setLoading(true);
         try {
@@ -249,6 +264,18 @@ export default function CheckoutPage() {
                                                             {addr.country}
                                                         </p>
                                                     </div>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-sm"
+                                                        style={{ color: 'var(--clr-danger)', marginLeft: 'auto', padding: '0.25rem' }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleRemoveAddress(addr.id);
+                                                        }}
+                                                        title="Remove Address"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
                                                 </div>
                                             ))}
                                         </div>

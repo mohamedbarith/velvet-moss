@@ -106,6 +106,22 @@ router.post('/addresses', protect, async (req, res) => {
     }
 });
 
+// @DELETE /api/auth/addresses/:id — Remove a saved address
+router.delete('/addresses/:id', protect, async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id);
+        const addressId = req.params.id;
+        const currentAddresses = user.addresses || [];
+        
+        const updatedAddresses = currentAddresses.filter(addr => addr.id !== addressId);
+        await user.update({ addresses: updatedAddresses });
+        
+        res.json({ success: true, user: { ...user.toJSON(), password: undefined } });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // @PUT /api/auth/change-password
 router.put('/change-password', protect, async (req, res) => {
     try {
