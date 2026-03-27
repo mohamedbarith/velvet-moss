@@ -151,9 +151,6 @@ export default function HomePage() {
                         <p style={{ maxWidth: '800px', margin: '0 auto 1.5rem', lineHeight: '1.8' }}>
                             Velvet Moss is beautifully crafted gifts designed to make every moment special. Our collection features elegant, high-quality products perfect for celebrating love, joy, and memorable occasions.
                         </p>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--clr-text-muted)', margin: '0 auto' }}>
-                            Website Developer: <strong>Mohamed Barith</strong>
-                        </p>
                     </div>
                 </div>
             </section>
