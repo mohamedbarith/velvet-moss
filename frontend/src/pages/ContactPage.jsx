@@ -37,9 +37,9 @@ export default function ContactPage() {
                         <div style={{ background: 'var(--gradient-hero)', borderRadius: 'var(--radius-xl)', padding: '2.5rem', color: '#fff', marginBottom: '1.5rem' }}>
                             <h3 style={{ color: '#fff', marginBottom: '1.5rem' }}>Talk to us</h3>
                             {[
-                                { icon: <Mail size={18} />, label: 'Email', val: 'hello@velvetmoss.in' },
-                                { icon: <Phone size={18} />, label: 'Phone', val: '+91 98765 43210' },
-                                { icon: <MapPin size={18} />, label: 'Location', val: 'Mumbai, India' },
+                                { icon: <Mail size={18} />, label: 'Email', val: 'Monisha@gmail.com' },
+                                { icon: <Phone size={18} />, label: 'Phone', val: '8838456449' },
+                                { icon: <MapPin size={18} />, label: 'Location', val: 'Podicherry' },
                                 { icon: <Clock size={18} />, label: 'Working Hours', val: 'Mon–Sat: 10 AM – 6 PM IST' },
                             ].map((item) => (
                                 <div key={item.label} style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', alignItems: 'flex-start' }}>
@@ -57,14 +57,19 @@ export default function ContactPage() {
                         <div style={{ background: '#fff', borderRadius: 'var(--radius-lg)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
                             <h4 style={{ marginBottom: '0.75rem' }}>Frequently Asked</h4>
                             {[
-                                'How long does shipping take?',
-                                'Can I return a handmade product?',
-                                'Do you ship internationally?',
-                                'How do I track my order?',
-                            ].map((q) => (
-                                <div key={q} style={{ padding: '0.6rem 0', borderBottom: '1px solid var(--clr-border-light)', fontSize: '0.875rem', color: 'var(--clr-moss)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    {q} <span style={{ color: 'var(--clr-text-muted)', fontSize: '0.8rem' }}>→</span>
-                                </div>
+                                { q: 'How long does shipping take?', a: 'Shipping typically takes 3-5 business days.' },
+                                { q: 'Can I return a handmade product?', a: 'Yes, we accept returns within 7 days of delivery.' },
+                                { q: 'Do you ship internationally?', a: 'Currently we only ship within India.' },
+                                { q: 'How do I track my order?', a: 'You will receive a tracking link via email once shipped.' },
+                            ].map((faq, i) => (
+                                <details key={i} style={{ padding: '0.6rem 0', borderBottom: '1px solid var(--clr-border-light)', fontSize: '0.875rem', color: 'var(--clr-moss)', cursor: 'pointer' }}>
+                                    <summary style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', outline: 'none' }}>
+                                        {faq.q} <span style={{ color: 'var(--clr-text-muted)', fontSize: '0.8rem' }}>↓</span>
+                                    </summary>
+                                    <div style={{ marginTop: '0.5rem', color: 'var(--clr-text-muted)', lineHeight: '1.5' }}>
+                                        {faq.a}
+                                    </div>
+                                </details>
                             ))}
                         </div>
                     </div>
