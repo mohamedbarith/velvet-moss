@@ -13,7 +13,7 @@ function RazorpayForm({ orderId, totalAmount, onSuccess }) {
         e.preventDefault();
 
         var options = {
-            key: "rzp_test_SQgBCgDU5sRA4n", // TODO: Replace with your actual Razorpay Key ID
+            key: "rzp_live_SXhDICAEougtT3", // TODO: Replace with your actual Razorpay Key ID
             amount: totalAmount ? (Math.round(totalAmount * 100)).toString() : "50000",
             currency: "INR",
             name: "Velvet Moss",
