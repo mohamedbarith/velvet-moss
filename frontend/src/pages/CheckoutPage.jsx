@@ -9,37 +9,69 @@ import '../styles/pages.css';
 
 // Removed legacy Stripe and mock UPI forms. Razorpay handles both intrinsically.
 function RazorpayForm({ orderId, totalAmount, onSuccess }) {
-    const handlePayment = (e) => {
+    const [loading, setLoading] = useState(false);
+
+    const handlePayment = async (e) => {
         e.preventDefault();
+        setLoading(true);
 
-        var options = {
-            key: "rzp_live_SXhDICAEougtT3", // TODO: Replace with your actual Razorpay Key ID
-            amount: totalAmount ? (Math.round(totalAmount * 100)).toString() : "50000",
-            currency: "INR",
-            name: "Velvet Moss",
-            description: "Order #" + orderId,
-            image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=100&h=100&fit=crop&q=80", // Logo for Razorpay popup
-            handler: function (response) {
-                alert("Payment Successful: " + response.razorpay_payment_id);
-                // Proceed to the success screen
-                onSuccess();
-            },
-            theme: { color: "#2C4A3B" }
-        };
+        try {
+            // Fetch Razorpay Key
+            const { data: keyData } = await API.get('/payments/razorpay-key');
+            
+            // Create Razorpay Order securely from backend
+            const { data: orderData } = await API.post('/payments/create-razorpay-order', { orderId });
+            
+            if (!orderData.success) throw new Error(orderData.message);
 
-        if (window.Razorpay) {
-            var rzp = new window.Razorpay(options);
-            rzp.on('payment.failed', function (response){
-                toast.error(response.error.description || "Payment failed");
-            });
-            rzp.open();
-        } else {
-            toast.error("Razorpay is still loading, please try again.");
+            var options = {
+                key: keyData.keyId,
+                amount: orderData.amount,
+                currency: "INR",
+                name: "Velvet Moss",
+                description: "Order #" + orderId,
+                image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=100&h=100&fit=crop&q=80",
+                order_id: orderData.razorpayOrderId,
+                handler: async function (response) {
+                    try {
+                        const verifyRes = await API.post('/payments/verify-payment', {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            orderId: orderId
+                        });
+
+                        if (verifyRes.data.success) {
+                            toast.success("Payment verified successfully!");
+                            onSuccess();
+                        } else {
+                            toast.error(verifyRes.data.message || "Payment verification failed");
+                        }
+                    } catch (err) {
+                        toast.error(err.response?.data?.message || err.message || "Verification failed");
+                    }
+                },
+                theme: { color: "#2C4A3B" }
+            };
+
+            if (window.Razorpay) {
+                var rzp = new window.Razorpay(options);
+                rzp.on('payment.failed', function (response){
+                    toast.error(response.error.description || "Payment failed");
+                });
+                rzp.open();
+            } else {
+                toast.error("Razorpay SDK failed to load. Please check your connection.");
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || err.message || "Something went wrong initializing payment");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <form>
+        <form onSubmit={handlePayment}>
             <div className="checkout-form-section">
                 <h3><span className="step-number">3</span> Pay with Razorpay</h3>
                 <p style={{ color: 'var(--clr-text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>
@@ -52,11 +84,12 @@ function RazorpayForm({ orderId, totalAmount, onSuccess }) {
             </div>
             <button
                 id="pay-btn"
+                type="submit"
                 className="btn btn-primary btn-lg w-full"
-                onClick={handlePayment}
+                disabled={loading}
                 style={{ marginTop: '1rem' }}
             >
-                <Lock size={16} /> Pay Now
+                {loading ? <span className="spinner spinner-sm" /> : <><Lock size={16} /> Pay Now</>}
             </button>
         </form>
     );

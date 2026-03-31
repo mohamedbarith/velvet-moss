@@ -1,13 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const Stripe = require('stripe');
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
 const Order = require('../models/Order');
 const { protect } = require('../middleware/auth');
 
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
-// @POST /api/payments/create-payment-intent
-router.post('/create-payment-intent', protect, async (req, res) => {
+// @GET /api/payments/razorpay-key
+router.get('/razorpay-key', (req, res) => {
+    res.json({ keyId: process.env.RAZORPAY_KEY_ID });
+});
+
+// @POST /api/payments/create-razorpay-order
+router.post('/create-razorpay-order', protect, async (req, res) => {
     try {
         const { orderId } = req.body;
         const order = await Order.findByPk(orderId);
@@ -16,33 +25,46 @@ router.post('/create-payment-intent', protect, async (req, res) => {
 
         const amountInPaise = Math.round(parseFloat(order.totalAmount) * 100);
 
-        const paymentIntent = await stripe.paymentIntents.create({
+        const options = {
             amount: amountInPaise,
-            currency: 'inr',
-            metadata: { orderId: orderId.toString(), userId: req.user.id.toString() },
-        });
+            currency: 'INR',
+            receipt: orderId.toString() // Optional, useful for mapping
+        };
 
-        res.json({ success: true, clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id });
+        const razorpayOrder = await razorpay.orders.create(options);
+
+        res.json({ 
+            success: true, 
+            orderId: orderId, 
+            razorpayOrderId: razorpayOrder.id, 
+            amount: razorpayOrder.amount 
+        });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// @POST /api/payments/confirm
-router.post('/confirm', protect, async (req, res) => {
+// @POST /api/payments/verify-payment
+router.post('/verify-payment', protect, async (req, res) => {
     try {
-        const { paymentIntentId, orderId } = req.body;
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
 
-        if (paymentIntent.status === 'succeeded') {
+        const body = razorpay_order_id + "|" + razorpay_payment_id;
+
+        const expectedSignature = crypto
+            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+            .update(body.toString())
+            .digest('hex');
+
+        if (expectedSignature === razorpay_signature) {
             await Order.update(
-                { paymentStatus: 'paid', orderStatus: 'confirmed', stripePaymentId: paymentIntentId },
+                { paymentStatus: 'paid', orderStatus: 'confirmed', stripePaymentId: razorpay_payment_id },
                 { where: { id: orderId } }
             );
             const order = await Order.findByPk(orderId);
-            res.json({ success: true, message: 'Payment confirmed!', order });
+            res.json({ success: true, message: 'Payment verified successfully!', order });
         } else {
-            res.status(400).json({ success: false, message: 'Payment not completed' });
+            res.status(400).json({ success: false, message: 'Invalid payment signature' });
         }
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
